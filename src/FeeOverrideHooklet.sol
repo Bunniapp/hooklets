@@ -32,10 +32,6 @@ contract FeeOverrideHooklet is IHooklet {
         bool overrideOneToZero,
         uint24 feeOneToZero
     ) public {
-        // 1- get the bunnitoken
-        // 2- get the owner fo the bunnitoken
-        // 3- make sure the msg.sender is the owner of the bunni token
-        // 4- if yes, then set the overrides
         IBunniToken bunniToken = bunniHub.bunniTokenOfPool(id);
         address owner = bunniToken.owner();
 
