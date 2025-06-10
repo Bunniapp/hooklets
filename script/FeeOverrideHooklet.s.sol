@@ -2,8 +2,8 @@
 pragma solidity ^0.8.13;
 
 import {Script, console} from "forge-std/Script.sol";
-import {FeeOverride} from "../src/FeeOverride.sol";
+import {FeeOverrideHooklet} from "../src/FeeOverrideHooklet.sol";
 
-contract FeeOverrideScript is Script {
+contract FeeOverrideHookletScript is Script {
     function setUp() public {}
 }

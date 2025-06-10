@@ -2,8 +2,8 @@
 pragma solidity ^0.8.13;
 
 import {Test, console} from "forge-std/Test.sol";
-import {FeeOverride} from "../src/FeeOverride.sol";
+import {FeeOverrideHooklet} from "../src/FeeOverrideHooklet.sol";
 
-contract FeeOverrideTest is Test {
+contract FeeOverrideHookletTest is Test {
     function setUp() public {}
 }

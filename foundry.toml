@@ -3,4 +3,9 @@ src = "src"
 out = "out"
 libs = ["lib"]
 
+remappings = [
+  "bunni-v2=lib/bunni-v2",
+  "v4-core=lib/bunni-v2/lib/v4-core",
+]
+
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options
