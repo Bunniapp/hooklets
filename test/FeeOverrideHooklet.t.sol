@@ -17,10 +17,31 @@ contract FeeOverrideHookletTest is Test {
         feeOverrideHooklet = new FeeOverrideHooklet(bunniHub);
     }
 
-    function test1() public {
+    function testSetFeeOverride() public {
         PoolId poolId = PoolId.wrap(0xeec51c6b1a9e7c4bb4fc4fa9a02fc4fff3fe94efd044f895d98b5bfbd2ff9433);
         address bunniTokenOwner = 0x9a8FEe232DCF73060Af348a1B62Cdb0a19852d13;
         uint24 newFee = 10000;
+
+        vm.startPrank(bunniTokenOwner);
+        feeOverrideHooklet.setFeeOverride(poolId, true, newFee, true, newFee);
+        (bool overrideZeroToOne, uint24 feeZeroToOne, bool overrideOneToZero, uint24 feeOneToZero) = feeOverrideHooklet.feeOverrides(poolId);
+        assertEq(overrideZeroToOne, true);
+        assertEq(feeZeroToOne, newFee);
+        assertEq(overrideOneToZero, true);
+        assertEq(feeOneToZero, newFee);
+        vm.stopPrank();
+    }
+
+    function testSetFeeOverrideReverts() public {
+        PoolId poolId = PoolId.wrap(0xeec51c6b1a9e7c4bb4fc4fa9a02fc4fff3fe94efd044f895d98b5bfbd2ff9433);
+        address bunniTokenOwner = 0x9a8FEe232DCF73060Af348a1B62Cdb0a19852d13;
+        uint24 invalidFee = 10000000; // 1e7
+        uint24 newFee = 10000;
+
+        vm.startPrank(bunniTokenOwner);
+        vm.expectRevert(FeeOverrideHooklet.FeeOverrideHooklet__InvalidSwapFee.selector);
+        feeOverrideHooklet.setFeeOverride(poolId, true, invalidFee, true, invalidFee);
+        vm.stopPrank();
 
         address nonOwner = address(1);
         vm.startPrank(nonOwner);

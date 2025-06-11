@@ -4,6 +4,7 @@ pragma solidity ^0.8.13;
 import { IHooklet } from "bunni-v2/src/interfaces/IHooklet.sol";
 import { IBunniHub } from "bunni-v2/src/interfaces/IBunniHub.sol";
 import { IBunniToken } from "bunni-v2/src/interfaces/IBunniToken.sol";
+import { SWAP_FEE_BASE } from "bunni-v2/src/base/Constants.sol";
 
 import { PoolId, PoolIdLibrary } from "v4-core/src/types/PoolId.sol";
 import { PoolKey } from "v4-core/src/types/PoolKey.sol";
@@ -29,6 +30,7 @@ contract FeeOverrideHooklet is IHooklet {
     /// Errors
     /// -----------------------------------------------------------------------
 
+    error FeeOverrideHooklet__InvalidSwapFee();
     error FeeOverrideHooklet__NotBunniTokenOwner();
 
     /// -----------------------------------------------------------------------
@@ -48,6 +50,11 @@ contract FeeOverrideHooklet is IHooklet {
         bool overrideOneToZero,
         uint24 feeOneToZero
     ) public {
+        // TODO add validation
+        if (feeZeroToOne >= SWAP_FEE_BASE || feeOneToZero >= SWAP_FEE_BASE) {
+            revert FeeOverrideHooklet__InvalidSwapFee();
+        }
+
         IBunniToken bunniToken = bunniHub.bunniTokenOfPool(id);
         address owner = bunniToken.owner();
 
