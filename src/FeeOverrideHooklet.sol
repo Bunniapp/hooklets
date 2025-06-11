@@ -50,7 +50,6 @@ contract FeeOverrideHooklet is IHooklet {
         bool overrideOneToZero,
         uint24 feeOneToZero
     ) public {
-        // TODO add validation
         if (feeZeroToOne >= SWAP_FEE_BASE || feeOneToZero >= SWAP_FEE_BASE) {
             revert FeeOverrideHooklet__InvalidSwapFee();
         }
