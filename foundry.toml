@@ -8,4 +8,11 @@ remappings = [
   "v4-core=lib/bunni-v2/lib/v4-core",
 ]
 
+[rpc_endpoints]
+arbitrum = "${RPC_URL_ARBITRUM}"
+base = "${RPC_URL_BASE}"
+mainnet = "${RPC_URL_MAINNET}"
+unichain = "${RPC_URL_UNICHAIN}"
+bnb = "${RPC_URL_BNB}"
+
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options

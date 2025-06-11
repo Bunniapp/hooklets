@@ -18,7 +18,18 @@ contract FeeOverrideHooklet is IHooklet {
         uint24 feeOneToZero;
     }
 
+    IBunniHub public immutable bunniHub;
     mapping(PoolId => FeeOverride) public feeOverrides;
+
+    constructor(address bunniHub_) {
+        bunniHub = IBunniHub(bunniHub_);
+    }
+
+    /// -----------------------------------------------------------------------
+    /// Errors
+    /// -----------------------------------------------------------------------
+
+    error FeeOverrideHooklet__NotBunniTokenOwner();
 
     /// -----------------------------------------------------------
     /// Override Functions
@@ -26,7 +37,6 @@ contract FeeOverrideHooklet is IHooklet {
 
     function setFeeOverride(
         PoolId id,
-        IBunniHub bunniHub,
         bool overrideZeroToOne,
         uint24 feeZeroToOne,
         bool overrideOneToZero,
@@ -35,7 +45,9 @@ contract FeeOverrideHooklet is IHooklet {
         IBunniToken bunniToken = bunniHub.bunniTokenOfPool(id);
         address owner = bunniToken.owner();
 
-        require(msg.sender == owner, "Not the BunniToken owner");
+        if (msg.sender != owner) {
+            revert FeeOverrideHooklet__NotBunniTokenOwner();
+        }
 
         FeeOverride storage feeOverride = feeOverrides[id];
         feeOverride.overrideZeroToOne = overrideZeroToOne;
