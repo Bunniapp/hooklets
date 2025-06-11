@@ -31,6 +31,12 @@ contract FeeOverrideHooklet is IHooklet {
 
     error FeeOverrideHooklet__NotBunniTokenOwner();
 
+    /// -----------------------------------------------------------------------
+    /// Events
+    /// -----------------------------------------------------------------------
+
+    event SetFeeOverride(PoolId indexed id, bool overrideZeroToOne, uint24 feeZeroToOne, bool overrideOneToZero, uint24 feeOneToZero);
+
     /// -----------------------------------------------------------
     /// Override Functions
     /// -----------------------------------------------------------
@@ -54,6 +60,8 @@ contract FeeOverrideHooklet is IHooklet {
         feeOverride.feeZeroToOne = feeZeroToOne;
         feeOverride.overrideOneToZero = overrideOneToZero;
         feeOverride.feeOneToZero = feeOneToZero;
+
+        emit SetFeeOverride(id, overrideZeroToOne, feeZeroToOne, overrideOneToZero, feeOneToZero);
     }
 
 
