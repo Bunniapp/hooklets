@@ -3,6 +3,12 @@ src = "src"
 out = "out"
 libs = ["lib"]
 
+optimizer = true
+optimizer_runs = 100_000_000
+solc_version = "0.8.30"
+verbosity = 1
+via_ir = true
+
 remappings = [
   "bunni-v2=lib/bunni-v2",
   "v4-core=lib/bunni-v2/lib/v4-core",
