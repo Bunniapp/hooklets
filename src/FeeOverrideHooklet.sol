@@ -177,14 +177,7 @@ contract FeeOverrideHooklet is IHooklet {
         PoolKey calldata key,
         IPoolManager.SwapParams calldata params
     ) external view returns (bytes4 selector, bool feeOverriden, uint24 fee, bool priceOverridden, uint160 sqrtPriceX96) {
-        PoolId poolId = PoolIdLibrary.toId(key);
-        FeeOverride memory feeOverride = feeOverrides[poolId];
-
-        selector = IHooklet.beforeSwap.selector;
-        feeOverriden = params.zeroForOne ? feeOverride.overrideZeroToOne : feeOverride.overrideOneToZero;
-        fee = params.zeroForOne ? feeOverride.feeZeroToOne : feeOverride.feeOneToZero;
-        priceOverridden = false;
-        sqrtPriceX96 = 0;
+        return _beforeSwap(key, params);
     }
 
     function beforeSwapView(
@@ -192,14 +185,7 @@ contract FeeOverrideHooklet is IHooklet {
         PoolKey calldata key,
         IPoolManager.SwapParams calldata params
     ) external view returns (bytes4 selector, bool feeOverriden, uint24 fee, bool priceOverridden, uint160 sqrtPriceX96) {
-        PoolId poolId = PoolIdLibrary.toId(key);
-        FeeOverride memory feeOverride = feeOverrides[poolId];
-
-        selector = IHooklet.beforeSwapView.selector;
-        feeOverriden = params.zeroForOne ? feeOverride.overrideZeroToOne : feeOverride.overrideOneToZero;
-        fee = params.zeroForOne ? feeOverride.feeZeroToOne : feeOverride.feeOneToZero;
-        priceOverridden = false;
-        sqrtPriceX96 = 0;
+        return _beforeSwap(key, params);
     }
 
     function afterSwap(
@@ -227,5 +213,23 @@ contract FeeOverrideHooklet is IHooklet {
         uint256 /* orderOutputAmount */
     ) external pure returns (bytes4 selector) {
         return IHooklet.afterRebalance.selector;
+    }
+
+    /// -----------------------------------------------------------
+    /// Internal Functions
+    /// -----------------------------------------------------------
+
+    function _beforeSwap(
+        PoolKey calldata key,
+        IPoolManager.SwapParams calldata params
+    ) internal view returns (bytes4 selector, bool feeOverriden, uint24 fee, bool priceOverridden, uint160 sqrtPriceX96) {
+        PoolId poolId = PoolIdLibrary.toId(key);
+        FeeOverride memory feeOverride = feeOverrides[poolId];
+
+        selector = IHooklet.beforeSwapView.selector;
+        feeOverriden = params.zeroForOne ? feeOverride.overrideZeroToOne : feeOverride.overrideOneToZero;
+        fee = params.zeroForOne ? feeOverride.feeZeroToOne : feeOverride.feeOneToZero;
+        priceOverridden = false;
+        sqrtPriceX96 = 0;
     }
 }
