@@ -177,7 +177,8 @@ contract FeeOverrideHooklet is IHooklet {
         PoolKey calldata key,
         IPoolManager.SwapParams calldata params
     ) external view returns (bytes4 selector, bool feeOverriden, uint24 fee, bool priceOverridden, uint160 sqrtPriceX96) {
-        return _beforeSwap(key, params);
+        selector = IHooklet.beforeSwap.selector;
+        (feeOverriden, fee, priceOverridden, sqrtPriceX96) = _beforeSwap(key, params);
     }
 
     function beforeSwapView(
@@ -185,7 +186,8 @@ contract FeeOverrideHooklet is IHooklet {
         PoolKey calldata key,
         IPoolManager.SwapParams calldata params
     ) external view returns (bytes4 selector, bool feeOverriden, uint24 fee, bool priceOverridden, uint160 sqrtPriceX96) {
-        return _beforeSwap(key, params);
+        selector = IHooklet.beforeSwapView.selector;
+        (feeOverriden, fee, priceOverridden, sqrtPriceX96) = _beforeSwap(key, params);
     }
 
     function afterSwap(
@@ -222,11 +224,10 @@ contract FeeOverrideHooklet is IHooklet {
     function _beforeSwap(
         PoolKey calldata key,
         IPoolManager.SwapParams calldata params
-    ) internal view returns (bytes4 selector, bool feeOverriden, uint24 fee, bool priceOverridden, uint160 sqrtPriceX96) {
+    ) internal view returns (bool feeOverriden, uint24 fee, bool priceOverridden, uint160 sqrtPriceX96) {
         PoolId poolId = PoolIdLibrary.toId(key);
         FeeOverride memory feeOverride = feeOverrides[poolId];
 
-        selector = IHooklet.beforeSwapView.selector;
         feeOverriden = params.zeroForOne ? feeOverride.overrideZeroToOne : feeOverride.overrideOneToZero;
         fee = params.zeroForOne ? feeOverride.feeZeroToOne : feeOverride.feeOneToZero;
         priceOverridden = false;
