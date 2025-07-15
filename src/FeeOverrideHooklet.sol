@@ -6,6 +6,8 @@ import { IBunniHub } from "bunni-v2/src/interfaces/IBunniHub.sol";
 import { IBunniToken } from "bunni-v2/src/interfaces/IBunniToken.sol";
 import { SWAP_FEE_BASE } from "bunni-v2/src/base/Constants.sol";
 
+import { LibMulticaller } from "multicaller/src/LibMulticaller.sol";
+
 import { PoolId, PoolIdLibrary } from "v4-core/src/types/PoolId.sol";
 import { PoolKey } from "v4-core/src/types/PoolKey.sol";
 import { IPoolManager } from "v4-core/src/interfaces/IPoolManager.sol";
@@ -56,8 +58,9 @@ contract FeeOverrideHooklet is IHooklet {
 
         IBunniToken bunniToken = bunniHub.bunniTokenOfPool(id);
         address owner = bunniToken.owner();
+        address msgSender = LibMulticaller.senderOrSigner();
 
-        if (msg.sender != owner) {
+        if (msgSender != owner) {
             revert FeeOverrideHooklet__NotBunniTokenOwner();
         }
 
