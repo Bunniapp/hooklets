@@ -13,10 +13,8 @@ import { IPoolManager } from "v4-core/src/interfaces/IPoolManager.sol";
 contract FeeOverrideHooklet is IHooklet {
 
     struct FeeOverride {
-        bool overrideZeroToOne;
-        uint24 feeZeroToOne;
-        bool overrideOneToZero;
-        uint24 feeOneToZero;
+        IHooklet.BeforeSwapFeeOverride zeroToOne;
+        IHooklet.BeforeSwapFeeOverride oneToZero;
     }
 
     IBunniHub public immutable bunniHub;
@@ -62,10 +60,10 @@ contract FeeOverrideHooklet is IHooklet {
         }
 
         FeeOverride storage feeOverride = feeOverrides[id];
-        feeOverride.overrideZeroToOne = overrideZeroToOne;
-        feeOverride.feeZeroToOne = feeZeroToOne;
-        feeOverride.overrideOneToZero = overrideOneToZero;
-        feeOverride.feeOneToZero = feeOneToZero;
+        feeOverride.zeroToOne.overridden = overrideZeroToOne;
+        feeOverride.zeroToOne.fee = feeZeroToOne;
+        feeOverride.oneToZero.overridden = overrideOneToZero;
+        feeOverride.oneToZero.fee = feeOneToZero;
 
         emit SetFeeOverride(id, overrideZeroToOne, feeZeroToOne, overrideOneToZero, feeOneToZero);
     }
@@ -228,8 +226,8 @@ contract FeeOverrideHooklet is IHooklet {
         PoolId poolId = PoolIdLibrary.toId(key);
         FeeOverride memory feeOverride = feeOverrides[poolId];
 
-        feeOverriden = params.zeroForOne ? feeOverride.overrideZeroToOne : feeOverride.overrideOneToZero;
-        fee = params.zeroForOne ? feeOverride.feeZeroToOne : feeOverride.feeOneToZero;
+        feeOverriden = params.zeroForOne ? feeOverride.zeroToOne.overridden : feeOverride.oneToZero.overridden;
+        fee = params.zeroForOne ? feeOverride.zeroToOne.fee : feeOverride.oneToZero.fee;
         priceOverridden = false;
         sqrtPriceX96 = 0;
     }

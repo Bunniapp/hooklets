@@ -3,6 +3,7 @@ pragma solidity ^0.8.13;
 
 import {Test, console} from "forge-std/Test.sol";
 import { FeeOverrideHooklet } from "../src/FeeOverrideHooklet.sol";
+import { IHooklet } from "bunni-v2/src/interfaces/IHooklet.sol";
 import { PoolId } from "v4-core/src/types/PoolId.sol";
 
 contract FeeOverrideHookletTest is Test {
@@ -24,11 +25,12 @@ contract FeeOverrideHookletTest is Test {
 
         vm.startPrank(bunniTokenOwner);
         feeOverrideHooklet.setFeeOverride(poolId, true, newFee, true, newFee);
-        (bool overrideZeroToOne, uint24 feeZeroToOne, bool overrideOneToZero, uint24 feeOneToZero) = feeOverrideHooklet.feeOverrides(poolId);
-        assertEq(overrideZeroToOne, true);
-        assertEq(feeZeroToOne, newFee);
-        assertEq(overrideOneToZero, true);
-        assertEq(feeOneToZero, newFee);
+
+        (IHooklet.BeforeSwapFeeOverride memory zeroToOne, IHooklet.BeforeSwapFeeOverride memory oneToZero) = feeOverrideHooklet.feeOverrides(poolId);
+        assertEq(zeroToOne.overridden, true);
+        assertEq(zeroToOne.fee, newFee);
+        assertEq(oneToZero.overridden, true);
+        assertEq(oneToZero.fee, newFee);
         vm.stopPrank();
     }
 
@@ -51,11 +53,12 @@ contract FeeOverrideHookletTest is Test {
 
         vm.startPrank(bunniTokenOwner);
         feeOverrideHooklet.setFeeOverride(poolId, true, newFee, true, newFee);
-        (bool overrideZeroToOne, uint24 feeZeroToOne, bool overrideOneToZero, uint24 feeOneToZero) = feeOverrideHooklet.feeOverrides(poolId);
-        assertEq(overrideZeroToOne, true);
-        assertEq(feeZeroToOne, newFee);
-        assertEq(overrideOneToZero, true);
-        assertEq(feeOneToZero, newFee);
+
+        (IHooklet.BeforeSwapFeeOverride memory zeroToOne, IHooklet.BeforeSwapFeeOverride memory oneToZero) = feeOverrideHooklet.feeOverrides(poolId);
+        assertEq(zeroToOne.overridden, true);
+        assertEq(zeroToOne.fee, newFee);
+        assertEq(oneToZero.overridden, true);
+        assertEq(oneToZero.fee, newFee);
         vm.stopPrank();
     }
 }
