@@ -12,6 +12,7 @@ via_ir = true
 remappings = [
   "bunni-v2=lib/bunni-v2",
   "v4-core=lib/bunni-v2/lib/v4-core",
+  "multicaller=lib/multicaller",
 ]
 
 [rpc_endpoints]
