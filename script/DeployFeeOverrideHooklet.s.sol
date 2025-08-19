@@ -25,7 +25,8 @@ contract DeployFeeOverrideHookletScript is CREATE3Script {
         uint256 feeOverrideHookletFlags = HookletLib.BEFORE_SWAP_FLAG + HookletLib.BEFORE_SWAP_OVERRIDE_FEE_FLAG;
         address feeOverrideHookletDeployed = create3.getDeployed(deployer, feeOverrideHookletSalt);
         require(
-            uint160(bytes20(feeOverrideHookletDeployed)) & HookletLib.ALL_FLAGS_MASK == feeOverrideHookletFlags && feeOverrideHookletDeployed.code.length == 0,
+            uint160(bytes20(feeOverrideHookletDeployed)) & HookletLib.ALL_FLAGS_MASK == feeOverrideHookletFlags
+                && feeOverrideHookletDeployed.code.length == 0,
             "hooklet address invalid"
         );
 
@@ -33,11 +34,7 @@ contract DeployFeeOverrideHookletScript is CREATE3Script {
 
         feeOverrideHooklet = FeeOverrideHooklet(
             create3.deploy(
-                feeOverrideHookletSalt,
-                bytes.concat(
-                    type(FeeOverrideHooklet).creationCode,
-                    abi.encode(bunniHub)
-                )
+                feeOverrideHookletSalt, bytes.concat(type(FeeOverrideHooklet).creationCode, abi.encode(bunniHub))
             )
         );
 

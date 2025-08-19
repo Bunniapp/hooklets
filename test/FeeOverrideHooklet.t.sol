@@ -2,11 +2,10 @@
 pragma solidity ^0.8.13;
 
 import {Test, console} from "forge-std/Test.sol";
-import { FeeOverrideHooklet } from "../src/FeeOverrideHooklet.sol";
-import { PoolId } from "v4-core/src/types/PoolId.sol";
+import {FeeOverrideHooklet} from "../src/FeeOverrideHooklet.sol";
+import {PoolId} from "v4-core/src/types/PoolId.sol";
 
 contract FeeOverrideHookletTest is Test {
-
     uint256 unichainFork;
     FeeOverrideHooklet public feeOverrideHooklet;
     address constant bunniHub = 0x00000091Cb2d7914C9cd196161Da0943aB7b92E1;
@@ -24,7 +23,8 @@ contract FeeOverrideHookletTest is Test {
 
         vm.startPrank(bunniTokenOwner);
         feeOverrideHooklet.setFeeOverride(poolId, true, newFee, true, newFee);
-        (bool overrideZeroToOne, uint24 feeZeroToOne, bool overrideOneToZero, uint24 feeOneToZero) = feeOverrideHooklet.feeOverrides(poolId);
+        (bool overrideZeroToOne, uint24 feeZeroToOne, bool overrideOneToZero, uint24 feeOneToZero) =
+            feeOverrideHooklet.feeOverrides(poolId);
         assertEq(overrideZeroToOne, true);
         assertEq(feeZeroToOne, newFee);
         assertEq(overrideOneToZero, true);
@@ -51,7 +51,8 @@ contract FeeOverrideHookletTest is Test {
 
         vm.startPrank(bunniTokenOwner);
         feeOverrideHooklet.setFeeOverride(poolId, true, newFee, true, newFee);
-        (bool overrideZeroToOne, uint24 feeZeroToOne, bool overrideOneToZero, uint24 feeOneToZero) = feeOverrideHooklet.feeOverrides(poolId);
+        (bool overrideZeroToOne, uint24 feeZeroToOne, bool overrideOneToZero, uint24 feeOneToZero) =
+            feeOverrideHooklet.feeOverrides(poolId);
         assertEq(overrideZeroToOne, true);
         assertEq(feeZeroToOne, newFee);
         assertEq(overrideOneToZero, true);

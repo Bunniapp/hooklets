@@ -1,19 +1,18 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
 
-import { IHooklet } from "bunni-v2/src/interfaces/IHooklet.sol";
-import { IBunniHub } from "bunni-v2/src/interfaces/IBunniHub.sol";
-import { IBunniToken } from "bunni-v2/src/interfaces/IBunniToken.sol";
-import { SWAP_FEE_BASE } from "bunni-v2/src/base/Constants.sol";
+import {IHooklet} from "bunni-v2/src/interfaces/IHooklet.sol";
+import {IBunniHub} from "bunni-v2/src/interfaces/IBunniHub.sol";
+import {IBunniToken} from "bunni-v2/src/interfaces/IBunniToken.sol";
+import {SWAP_FEE_BASE} from "bunni-v2/src/base/Constants.sol";
 
-import { LibMulticaller } from "multicaller/src/LibMulticaller.sol";
+import {LibMulticaller} from "multicaller/src/LibMulticaller.sol";
 
-import { PoolId, PoolIdLibrary } from "v4-core/src/types/PoolId.sol";
-import { PoolKey } from "v4-core/src/types/PoolKey.sol";
-import { IPoolManager } from "v4-core/src/interfaces/IPoolManager.sol";
+import {PoolId, PoolIdLibrary} from "v4-core/src/types/PoolId.sol";
+import {PoolKey} from "v4-core/src/types/PoolKey.sol";
+import {IPoolManager} from "v4-core/src/interfaces/IPoolManager.sol";
 
 contract FeeOverrideHooklet is IHooklet {
-
     struct FeeOverride {
         bool overrideZeroToOne;
         uint24 feeZeroToOne;
@@ -39,7 +38,9 @@ contract FeeOverrideHooklet is IHooklet {
     /// Events
     /// -----------------------------------------------------------------------
 
-    event SetFeeOverride(PoolId indexed id, bool overrideZeroToOne, uint24 feeZeroToOne, bool overrideOneToZero, uint24 feeOneToZero);
+    event SetFeeOverride(
+        PoolId indexed id, bool overrideZeroToOne, uint24 feeZeroToOne, bool overrideOneToZero, uint24 feeOneToZero
+    );
 
     /// -----------------------------------------------------------
     /// Override Functions
@@ -73,148 +74,152 @@ contract FeeOverrideHooklet is IHooklet {
         emit SetFeeOverride(id, overrideZeroToOne, feeZeroToOne, overrideOneToZero, feeOneToZero);
     }
 
-
     /// -----------------------------------------------------------
     /// IHooklet Functions
     /// -----------------------------------------------------------
 
     function beforeTransfer(
-        address /* sender */,
-        PoolKey calldata /* key */,
-        IBunniToken /* bunniToken */,
-        address /* from */,
-        address /* to */,
+        address, /* sender */
+        PoolKey calldata, /* key */
+        IBunniToken, /* bunniToken */
+        address, /* from */
+        address, /* to */
         uint256 /* amount */
     ) external pure returns (bytes4 selector) {
         return IHooklet.beforeTransfer.selector;
     }
 
     function afterTransfer(
-        address /* sender */,
-        PoolKey calldata /* key */,
-        IBunniToken /* bunniToken */,
-        address /* from */,
-        address /* to */,
+        address, /* sender */
+        PoolKey calldata, /* key */
+        IBunniToken, /* bunniToken */
+        address, /* from */
+        address, /* to */
         uint256 /* amount */
     ) external pure returns (bytes4 selector) {
         return IHooklet.afterTransfer.selector;
     }
 
-    function beforeInitialize(
-        address /* sender */,
-        IBunniHub.DeployBunniTokenParams calldata /* params */
-    ) external pure returns (bytes4 selector) {
+    function beforeInitialize(address, /* sender */ IBunniHub.DeployBunniTokenParams calldata /* params */ )
+        external
+        pure
+        returns (bytes4 selector)
+    {
         return IHooklet.beforeInitialize.selector;
     }
 
     function afterInitialize(
-        address /* sender */,
-        IBunniHub.DeployBunniTokenParams calldata /* params */,
+        address, /* sender */
+        IBunniHub.DeployBunniTokenParams calldata, /* params */
         InitializeReturnData calldata /* returnData */
     ) external pure returns (bytes4 selector) {
         return IHooklet.afterInitialize.selector;
     }
 
-    function beforeDeposit(
-        address /* sender */,
-        IBunniHub.DepositParams calldata /* params */
-    ) external pure returns (bytes4 selector) {
+    function beforeDeposit(address, /* sender */ IBunniHub.DepositParams calldata /* params */ )
+        external
+        pure
+        returns (bytes4 selector)
+    {
         return IHooklet.beforeDeposit.selector;
     }
 
-    function beforeDepositView(
-        address /* sender */,
-        IBunniHub.DepositParams calldata /* params */
-    ) external pure returns (bytes4 selector) {
+    function beforeDepositView(address, /* sender */ IBunniHub.DepositParams calldata /* params */ )
+        external
+        pure
+        returns (bytes4 selector)
+    {
         return IHooklet.beforeDepositView.selector;
     }
 
     function afterDeposit(
-        address /* sender */,
-        IBunniHub.DepositParams calldata /* params */,
+        address, /* sender */
+        IBunniHub.DepositParams calldata, /* params */
         DepositReturnData calldata /* returnData */
     ) external pure returns (bytes4 selector) {
         return IHooklet.afterDeposit.selector;
     }
 
     function afterDepositView(
-        address /* sender */,
-        IBunniHub.DepositParams calldata /* params */,
+        address, /* sender */
+        IBunniHub.DepositParams calldata, /* params */
         DepositReturnData calldata /* returnData */
     ) external pure returns (bytes4 selector) {
         return IHooklet.afterDepositView.selector;
     }
 
-    function beforeWithdraw(
-        address /* sender */,
-        IBunniHub.WithdrawParams calldata /* params */
-    ) external pure returns (bytes4 selector) {
+    function beforeWithdraw(address, /* sender */ IBunniHub.WithdrawParams calldata /* params */ )
+        external
+        pure
+        returns (bytes4 selector)
+    {
         return IHooklet.beforeWithdraw.selector;
     }
 
-    function beforeWithdrawView(
-        address /* sender */,
-        IBunniHub.WithdrawParams calldata /* params */
-    ) external pure returns (bytes4 selector) {
+    function beforeWithdrawView(address, /* sender */ IBunniHub.WithdrawParams calldata /* params */ )
+        external
+        pure
+        returns (bytes4 selector)
+    {
         return IHooklet.beforeWithdrawView.selector;
     }
 
     function afterWithdraw(
-        address /* sender */,
-        IBunniHub.WithdrawParams calldata /* params */,
+        address, /* sender */
+        IBunniHub.WithdrawParams calldata, /* params */
         WithdrawReturnData calldata /* returnData */
     ) external pure returns (bytes4 selector) {
         return IHooklet.afterWithdraw.selector;
     }
 
     function afterWithdrawView(
-        address /* sender */,
-        IBunniHub.WithdrawParams calldata /* params */,
+        address, /* sender */
+        IBunniHub.WithdrawParams calldata, /* params */
         WithdrawReturnData calldata /* returnData */
     ) external pure returns (bytes4 selector) {
         return IHooklet.afterWithdrawView.selector;
     }
 
-    function beforeSwap(
-        address /* sender */,
-        PoolKey calldata key,
-        IPoolManager.SwapParams calldata params
-    ) external view returns (bytes4 selector, bool feeOverriden, uint24 fee, bool priceOverridden, uint160 sqrtPriceX96) {
+    function beforeSwap(address, /* sender */ PoolKey calldata key, IPoolManager.SwapParams calldata params)
+        external
+        view
+        returns (bytes4 selector, bool feeOverriden, uint24 fee, bool priceOverridden, uint160 sqrtPriceX96)
+    {
         selector = IHooklet.beforeSwap.selector;
         (feeOverriden, fee, priceOverridden, sqrtPriceX96) = _beforeSwap(key, params);
     }
 
-    function beforeSwapView(
-        address /* sender */,
-        PoolKey calldata key,
-        IPoolManager.SwapParams calldata params
-    ) external view returns (bytes4 selector, bool feeOverriden, uint24 fee, bool priceOverridden, uint160 sqrtPriceX96) {
+    function beforeSwapView(address, /* sender */ PoolKey calldata key, IPoolManager.SwapParams calldata params)
+        external
+        view
+        returns (bytes4 selector, bool feeOverriden, uint24 fee, bool priceOverridden, uint160 sqrtPriceX96)
+    {
         selector = IHooklet.beforeSwapView.selector;
         (feeOverriden, fee, priceOverridden, sqrtPriceX96) = _beforeSwap(key, params);
     }
 
     function afterSwap(
-        address /* sender */,
-        PoolKey calldata /* key */,
-        IPoolManager.SwapParams calldata /* params */,
+        address, /* sender */
+        PoolKey calldata, /* key */
+        IPoolManager.SwapParams calldata, /* params */
         SwapReturnData calldata /* returnData */
     ) external pure returns (bytes4 selector) {
         return IHooklet.afterSwap.selector;
     }
 
     function afterSwapView(
-        address /* sender */,
-        PoolKey calldata /* key */,
-        IPoolManager.SwapParams calldata /* params */,
+        address, /* sender */
+        PoolKey calldata, /* key */
+        IPoolManager.SwapParams calldata, /* params */
         SwapReturnData calldata /* returnData */
     ) external pure returns (bytes4 selector) {
         return IHooklet.afterSwapView.selector;
     }
 
     function afterRebalance(
-        PoolKey calldata /* key */,
-        bool /* orderOutputIsCurrency0 */,
-        uint256 /* orderInputAmount */,
+        PoolKey calldata, /* key */
+        bool, /* orderOutputIsCurrency0 */
+        uint256, /* orderInputAmount */
         uint256 /* orderOutputAmount */
     ) external pure returns (bytes4 selector) {
         return IHooklet.afterRebalance.selector;
@@ -224,10 +229,11 @@ contract FeeOverrideHooklet is IHooklet {
     /// Internal Functions
     /// -----------------------------------------------------------
 
-    function _beforeSwap(
-        PoolKey calldata key,
-        IPoolManager.SwapParams calldata params
-    ) internal view returns (bool feeOverriden, uint24 fee, bool priceOverridden, uint160 sqrtPriceX96) {
+    function _beforeSwap(PoolKey calldata key, IPoolManager.SwapParams calldata params)
+        internal
+        view
+        returns (bool feeOverriden, uint24 fee, bool priceOverridden, uint160 sqrtPriceX96)
+    {
         PoolId poolId = PoolIdLibrary.toId(key);
         FeeOverride memory feeOverride = feeOverrides[poolId];
 
