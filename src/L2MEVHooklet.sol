@@ -117,6 +117,10 @@ contract L2MEVHooklet is IHooklet {
         external
         returns (bytes4 selector, bool feeOverriden, uint24 fee, bool priceOverridden, uint160 sqrtPriceX96)
     {
+        if (msg.sender != address(key.hooks)) {
+            return (bytes4(0), false, 0, false, 0);
+        }
+
         selector = IHooklet.beforeSwap.selector;
         PoolId poolId = key.toId();
         (feeOverriden, fee, priceOverridden, sqrtPriceX96) = _beforeSwap(poolId, key, params);
