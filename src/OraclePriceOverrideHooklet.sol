@@ -17,9 +17,10 @@ import {PoolKey} from "v4-core/src/types/PoolKey.sol";
 import {IPoolManager} from "v4-core/src/interfaces/IPoolManager.sol";
 import {TickMath} from "v4-core/src/libraries/TickMath.sol";
 
-/// @notice Extremely rudimentary anti-MEV hooklet targeting L2s with priority-fee ordering.
-/// Implements MEV tax on swaps using priority fees, which only supports pairs with ETH/WETH as one asset.
-contract L2MEVHooklet is IHooklet {
+import {IPriceOracle} from "euler-price-oracle/interfaces/IPriceOracle.sol";
+
+/// @notice Adds oracle-based price override to L2MEVHooklet.
+contract OraclePriceOverrideHooklet is IHooklet {
     using TickMath for *;
     using FixedPointMathLib for *;
     using PoolIdLibrary for PoolKey;
@@ -31,17 +32,23 @@ contract L2MEVHooklet is IHooklet {
         bool overrideOneToZero;
         uint24 feeOneToZero;
         uint32 priorityFeeMultiplier; // 3 decimals
+        IPriceOracle oracle;
     }
 
     uint24 internal constant TWAP_DURATION = 5 minutes;
     uint256 internal constant PRIO_FEE_MULT_BASE = 1000;
     uint256 internal constant Q64 = 1 << 64;
     uint256 internal constant Q160 = 1 << 160; // Q96 * Q64
+    uint256 internal constant Q192 = 1 << 192; // Q96 * Q96
+    uint256 internal constant ORACLE_MIN_ETH_IN = 0.1 ether;
+    uint256 internal constant MIN_DEVIATION = 0.0005 ether; // 0.05%
 
     IBunniHub public immutable bunniHub;
     Currency public immutable weth;
 
     mapping(PoolId => PoolConfig) public poolConfigs;
+    mapping(PoolId => uint256) public lastSwapBlock;
+    mapping(PoolId => uint160) public lastSqrtPriceX96Override;
 
     constructor(address bunniHub_, address weth_) {
         bunniHub = IBunniHub(bunniHub_);
@@ -85,9 +92,9 @@ contract L2MEVHooklet is IHooklet {
             revert L2MEVHooklet__NotBunniTokenOwner();
         }
 
-        // one of the tokens must be ETH or WETH if priority fee is set
+        // one of the tokens must be ETH or WETH if priority fee and/or oracle is set
         if (
-            newConfig.priorityFeeMultiplier != 0
+            (newConfig.priorityFeeMultiplier != 0 || address(newConfig.oracle) != address(0))
                 && !(key.currency0 == CurrencyLibrary.ADDRESS_ZERO || key.currency0 == weth || key.currency1 == weth)
         ) {
             revert L2MEVHooklet__InvalidTokenPair();
@@ -108,7 +115,6 @@ contract L2MEVHooklet is IHooklet {
 
     function beforeSwap(address, /* sender */ PoolKey calldata key, IPoolManager.SwapParams calldata params)
         external
-        view
         returns (bytes4 selector, bool feeOverriden, uint24 fee, bool priceOverridden, uint160 sqrtPriceX96)
     {
         if (msg.sender != address(key.hooks)) {
@@ -118,6 +124,14 @@ contract L2MEVHooklet is IHooklet {
         selector = IHooklet.beforeSwap.selector;
         PoolId poolId = key.toId();
         (feeOverriden, fee, priceOverridden, sqrtPriceX96) = _beforeSwap(poolId, key, params);
+
+        // update last swap block
+        lastSwapBlock[poolId] = block.number;
+
+        // update last price override
+        if (priceOverridden) {
+            lastSqrtPriceX96Override[poolId] = sqrtPriceX96;
+        }
     }
 
     function beforeSwapView(address, /* sender */ PoolKey calldata key, IPoolManager.SwapParams calldata params)
@@ -138,9 +152,70 @@ contract L2MEVHooklet is IHooklet {
         PoolConfig memory config = poolConfigs[poolId];
         bool exactIn = params.amountSpecified < 0;
 
-        // don't override price
-        priceOverridden = false;
-        sqrtPriceX96 = 0;
+        // get isTopOfBlockSwap status
+        bool isTopOfBlockSwap = block.number != lastSwapBlock[poolId];
+
+        // override price for top-of-block swap if oracle is set
+        if (address(config.oracle) != address(0) && isTopOfBlockSwap) {
+            // override price using oracle
+            // always use the specified amount as inAmount, since if it's an exact output swap then we compute the price via a
+            // hypothetical outputToken => inputToken swap
+            bool currency0IsEth = key.currency0.isAddressZero() || key.currency0 == weth;
+            bool currency0IsSpecified = exactIn == params.zeroForOne;
+
+            uint256 inAmount = params.amountSpecified.abs(); // in base token
+
+            // enforce minimum oracle input amount to ensure the price has enough precision
+            if (currency0IsEth == currency0IsSpecified) {
+                // ETH is the specified currency
+                inAmount = FixedPointMathLib.max(inAmount, ORACLE_MIN_ETH_IN);
+            } else {
+                // ETH is the unspecified currency
+                inAmount = FixedPointMathLib.max(inAmount, _convert(key, currency0IsEth, ORACLE_MIN_ETH_IN));
+            }
+
+            (address base, address quote) = currency0IsSpecified
+                ? (Currency.unwrap(key.currency0), Currency.unwrap(key.currency1))
+                : (Currency.unwrap(key.currency1), Currency.unwrap(key.currency0));
+            (uint256 bidOutAmount, uint256 askOutAmount) = config.oracle.getQuotes(inAmount, base, quote); // in quote token
+            uint256 outAmount = exactIn ? bidOutAmount : askOutAmount;
+            (uint256 amount0, uint256 amount1) = currency0IsSpecified ? (inAmount, outAmount) : (outAmount, inAmount);
+            if (amount0 == 0) {
+                // divide by zero error
+                // don't override price
+                priceOverridden = false;
+                sqrtPriceX96 = 0;
+            } else {
+                // compute sqrtPriceX96 candidate
+                uint256 sqrtPriceX96_ = amount1.fullMulDiv(Q192, amount0).sqrt(); // unit: sqrt(token1 / token0) in Q96
+
+                if (sqrtPriceX96_ >= TickMath.MIN_SQRT_PRICE && sqrtPriceX96_ <= TickMath.MAX_SQRT_PRICE) {
+                    // candidate is valid
+                    // ensure it's sufficiently different from the last override
+                    uint160 lastSqrtPriceX96Override_ = lastSqrtPriceX96Override[poolId];
+
+                    if (
+                        FixedPointMathLib.dist(lastSqrtPriceX96Override_, sqrtPriceX96_).mulDiv(1 ether, sqrtPriceX96_)
+                            < MIN_DEVIATION
+                    ) {
+                        priceOverridden = false;
+                        sqrtPriceX96 = 0;
+                    } else {
+                        priceOverridden = true;
+                        sqrtPriceX96 = uint160(sqrtPriceX96_);
+                    }
+                } else {
+                    // candidate is invalid
+                    // don't override price
+                    priceOverridden = false;
+                    sqrtPriceX96 = 0;
+                }
+            }
+        } else {
+            // don't override price
+            priceOverridden = false;
+            sqrtPriceX96 = 0;
+        }
 
         // basic fee override
         feeOverriden = params.zeroForOne ? config.overrideZeroToOne : config.overrideOneToZero;

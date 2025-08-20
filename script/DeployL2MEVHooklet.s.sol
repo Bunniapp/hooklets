@@ -22,8 +22,7 @@ contract DeployL2MEVHookletScript is CREATE3Script {
 
         l2mevHookletSalt = getCreate3SaltFromEnv("L2MEVHooklet");
 
-        uint256 l2mevHookletFlags = HookletLib.BEFORE_SWAP_FLAG + HookletLib.BEFORE_SWAP_OVERRIDE_FEE_FLAG
-            + HookletLib.BEFORE_SWAP_OVERRIDE_PRICE_FLAG;
+        uint256 l2mevHookletFlags = HookletLib.BEFORE_SWAP_FLAG + HookletLib.BEFORE_SWAP_OVERRIDE_FEE_FLAG;
         address l2mevHookletDeployed = create3.getDeployed(deployer, l2mevHookletSalt);
         require(
             uint160(bytes20(l2mevHookletDeployed)) & HookletLib.ALL_FLAGS_MASK == l2mevHookletFlags
