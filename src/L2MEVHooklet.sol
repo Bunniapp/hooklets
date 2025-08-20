@@ -43,12 +43,14 @@ contract L2MEVHooklet is IHooklet {
     uint256 internal constant Q160 = 1 << 160; // Q96 * Q64
     uint256 internal constant Q192 = 1 << 192; // Q96 * Q96
     uint256 internal constant ORACLE_MIN_ETH_IN = 0.1 ether;
+    uint256 internal constant MIN_DEVIATION = 0.0005 ether; // 0.05%
 
     IBunniHub public immutable bunniHub;
     Currency public immutable weth;
 
     mapping(PoolId => PoolConfig) public poolConfigs;
     mapping(PoolId => uint256) public lastSwapBlock;
+    mapping(PoolId => uint160) public lastSqrtPriceX96Override;
 
     constructor(address bunniHub_, address weth_) {
         bunniHub = IBunniHub(bunniHub_);
@@ -127,6 +129,11 @@ contract L2MEVHooklet is IHooklet {
 
         // update last swap block
         lastSwapBlock[poolId] = block.number;
+
+        // update last price override
+        if (priceOverridden) {
+            lastSqrtPriceX96Override[poolId] = sqrtPriceX96;
+        }
     }
 
     function beforeSwapView(address, /* sender */ PoolKey calldata key, IPoolManager.SwapParams calldata params)
@@ -172,7 +179,8 @@ contract L2MEVHooklet is IHooklet {
             (address base, address quote) = currency0IsSpecified
                 ? (Currency.unwrap(key.currency0), Currency.unwrap(key.currency1))
                 : (Currency.unwrap(key.currency1), Currency.unwrap(key.currency0));
-            uint256 outAmount = config.oracle.getQuote(inAmount, base, quote); // in quote token
+            (uint256 bidOutAmount, uint256 askOutAmount) = config.oracle.getQuotes(inAmount, base, quote); // in quote token
+            uint256 outAmount = exactIn ? bidOutAmount : askOutAmount;
             (uint256 amount0, uint256 amount1) = currency0IsSpecified ? (inAmount, outAmount) : (outAmount, inAmount);
             if (amount0 == 0) {
                 // divide by zero error
@@ -185,8 +193,19 @@ contract L2MEVHooklet is IHooklet {
 
                 if (sqrtPriceX96_ >= TickMath.MIN_SQRT_PRICE && sqrtPriceX96_ <= TickMath.MAX_SQRT_PRICE) {
                     // candidate is valid
-                    priceOverridden = true;
-                    sqrtPriceX96 = uint160(sqrtPriceX96_);
+                    // ensure it's sufficiently different from the last override
+                    uint160 lastSqrtPriceX96Override_ = lastSqrtPriceX96Override[poolId];
+
+                    if (
+                        FixedPointMathLib.dist(lastSqrtPriceX96Override_, sqrtPriceX96_).mulDiv(1 ether, sqrtPriceX96_)
+                            < MIN_DEVIATION
+                    ) {
+                        priceOverridden = false;
+                        sqrtPriceX96 = 0;
+                    } else {
+                        priceOverridden = true;
+                        sqrtPriceX96 = uint160(sqrtPriceX96_);
+                    }
                 } else {
                     // candidate is invalid
                     // don't override price
